@@ -1,98 +1,99 @@
-import React from 'react';
-import { View, Text, CheckBox, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Button } from 'react-native';
+import TodoItem from './TodoItem';
 
 const styles = StyleSheet.create({
-  todoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginVertical: 5,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  checkboxContainer: {
-    marginRight: 10,
-  },
-  todoItemText: {
+  container: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    padding: 15,
+    backgroundColor: '#fff',
   },
-  completed: {
-    textDecorationLine: 'line-through',
-    color: '#999',
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  deleteButton: {
-    backgroundColor: '#FF6347',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+  filterButton: {
+    padding: 10,
     borderRadius: 5,
-  },
-  deleteButtonText: {
+    backgroundColor: '#4CAF50',
     color: '#fff',
-    fontSize: 14,
+    textAlign: 'center',
+    flex: 1,
+    marginHorizontal: 5,
   },
-  priorityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 10,
-  },
-  dueDateText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  categoryText: {
-    fontSize: 12,
-    color: '#666',
-    marginRight: 10,
+  filterButtonText: {
+    color: '#fff',
+    textAlign: 'center',
   },
 });
 
-export default function TodoItem({ task, deleteTask, toggleCompleted }) {
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'High':
-        return '#FF6347'; // Red
-      case 'Medium':
-        return '#FFA500'; // Orange
-      case 'Low':
-        return '#4CAF50'; // Green
-      default:
-        return '#ccc'; // Default grey
-    }
+export default function TodoList() {
+  const [tasks, setTasks] = useState([
+    { id: '1', text: 'Buy groceries', completed: false, priority: 'High' },
+    { id: '2', text: 'Walk the dog', completed: true, priority: 'Medium' },
+    { id: '3', text: 'Finish project', completed: false, priority: 'Low' },
+  ]);
+  const [filter, setFilter] = useState('All'); // Filter: All, Completed, Incomplete
+  const [sortOrder, setSortOrder] = useState('None'); // Sort: None, Priority
+
+  const toggleCompleted = (id) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, completed: !task.completed } : task
+    ));
   };
 
+  const deleteTask = (id) => {
+    setTasks(tasks.filter(task => task.id !== id));
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    if (filter === 'All') return true;
+    return filter === 'Completed' ? task.completed : !task.completed;
+  });
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortOrder === 'Priority') {
+      const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+    return 0;
+  });
+
   return (
-    <View style={styles.todoItem}>
-      <View style={styles.checkboxContainer}>
-        <CheckBox
-          value={task.completed}
-          onValueChange={() => toggleCompleted(task.id)}
-          tintColors={{ true: '#4CAF50', false: '#ccc' }} // Green when checked
+    <View style={styles.container}>
+      <View style={styles.filterContainer}>
+        <Button
+          title="All"
+          onPress={() => setFilter('All')}
+          color={filter === 'All' ? '#4CAF50' : '#ccc'}
+        />
+        <Button
+          title="Completed"
+          onPress={() => setFilter('Completed')}
+          color={filter === 'Completed' ? '#4CAF50' : '#ccc'}
+        />
+        <Button
+          title="Incomplete"
+          onPress={() => setFilter('Incomplete')}
+          color={filter === 'Incomplete' ? '#4CAF50' : '#ccc'}
+        />
+        <Button
+          title="Sort by Priority"
+          onPress={() => setSortOrder(sortOrder === 'Priority' ? 'None' : 'Priority')}
+          color={sortOrder === 'Priority' ? '#4CAF50' : '#ccc'}
         />
       </View>
-      <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
-      <Text style={[styles.todoItemText, task.completed && styles.completed]}>
-        {task.text}
-      </Text>
-      {task.dueDate && <Text style={styles.dueDateText}>{task.dueDate}</Text>}
-      {task.category && <Text style={styles.categoryText}>{task.category}</Text>}
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => deleteTask(task.id)}
-      >
-        <Text style={styles.deleteButtonText}>Delete</Text>
-      </TouchableOpacity>
+      <ScrollView>
+        {sortedTasks.map(task => (
+          <TodoItem
+            key={task.id}
+            task={task}
+            deleteTask={deleteTask}
+            toggleCompleted={toggleCompleted}
+          />
+        ))}
+      </ScrollView>
     </View>
   );
 }
